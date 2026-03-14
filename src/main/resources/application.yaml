@@ -1,3 +1,8 @@
 spring:
   application:
     name: BankingBackend
+
+  jackson:
+    deserialization:
+      fail-on-ignored-properties: true
+      fail-on-unknown-properties: true
