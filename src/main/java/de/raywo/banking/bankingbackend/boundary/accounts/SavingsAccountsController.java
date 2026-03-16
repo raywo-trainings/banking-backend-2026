@@ -1,5 +1,7 @@
 package de.raywo.banking.bankingbackend.boundary.accounts;
 
+import de.raywo.banking.bankingbackend.boundary.shared.NotFoundException;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -35,7 +37,7 @@ public class SavingsAccountsController {
 
   @PostMapping
   public ResponseEntity<SavingsAccountDTO> createAccount(
-      @RequestBody SavingsAccountDTO account,
+      @RequestBody @Valid SavingsAccountDTO account,
       UriComponentsBuilder uriBuilder
   ) {
     if (savingsAccounts.containsKey(account.getIban())) {
@@ -65,9 +67,7 @@ public class SavingsAccountsController {
   public ResponseEntity<SavingsAccountDTO> getSavingsAccount(
       @PathVariable String iban
   ) {
-    if (!savingsAccounts.containsKey(iban)) {
-      return ResponseEntity.notFound().build();
-    }
+    requireAccountExists(iban);
 
     return ResponseEntity.ok(savingsAccounts.get(iban));
   }
@@ -76,11 +76,9 @@ public class SavingsAccountsController {
   @PutMapping("/{iban}")
   public ResponseEntity<SavingsAccountDTO> updateAccount(
       @PathVariable String iban,
-      @RequestBody SavingsAccountDTO account
+      @RequestBody @Valid SavingsAccountDTO account
   ) {
-    if (!savingsAccounts.containsKey(iban)) {
-      return ResponseEntity.notFound().build();
-    }
+    requireAccountExists(iban);
 
     var copiedAccount = SavingsAccountDTO.copyFrom(account);
 
@@ -94,12 +92,18 @@ public class SavingsAccountsController {
   public ResponseEntity<Void> deleteAccount(
       @PathVariable String iban
   ) {
-    if (!savingsAccounts.containsKey(iban)) {
-      return ResponseEntity.notFound().build();
-    }
+    requireAccountExists(iban);
 
     savingsAccounts.remove(iban);
 
     return ResponseEntity.noContent().build();
   }
+
+
+  private void requireAccountExists(String iban) {
+    if (!savingsAccounts.containsKey(iban)) {
+      throw new NotFoundException("Account with IBAN " + iban + " does not exist");
+    }
+  }
+
 }
