@@ -1,12 +1,13 @@
 package de.raywo.banking.bankingbackend.boundary.customers;
 
+import de.raywo.banking.bankingbackend.boundary.shared.NotFoundException;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,9 +34,7 @@ public class CustomersController {
 
   @GetMapping("/{id}")
   public ResponseEntity<CustomerDTO> getCustomer(@PathVariable String id) {
-    if (!customers.containsKey(id)) {
-      return ResponseEntity.notFound().build();
-    }
+    requireCustomerExists(id);
 
     return ResponseEntity.ok(customers.get(id));
   }
@@ -43,7 +42,7 @@ public class CustomersController {
 
   @PostMapping
   public ResponseEntity<CustomerDTO> createCustomer(
-      @RequestBody CustomerDTO customer,
+      @RequestBody @Valid CustomerDTO customer,
       UriComponentsBuilder uriBuilder
   ) {
     final String id = generateId();
@@ -68,11 +67,9 @@ public class CustomersController {
   @PutMapping("/{id}")
   public ResponseEntity<CustomerDTO> updateCustomer(
       @PathVariable String id,
-      @RequestBody CustomerDTO customer
+      @RequestBody @Valid CustomerDTO customer
   ) {
-    if (!customers.containsKey(id)) {
-      return ResponseEntity.notFound().build();
-    }
+    requireCustomerExists(id);
 
     CustomerDTO updatedCustomer = new CustomerDTO(
         id,
@@ -88,6 +85,8 @@ public class CustomersController {
 
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> deleteCustomer(@PathVariable String id) {
+    requireCustomerExists(id);
+
     customers.remove(id);
 
     return ResponseEntity.noContent().build();
@@ -95,13 +94,20 @@ public class CustomersController {
 
 
   private String generateId() {
-    return customers.keySet()
+    int nextId = customers.keySet()
         .stream()
-        .map(Integer::parseInt)
-        .max(Comparator.naturalOrder())
-        .map(n -> n + 1)
-        .map(String::valueOf)
-        .orElse("0");
+        .mapToInt(Integer::parseInt)
+        .max()
+        .orElse(0) + 1;
+
+    return String.valueOf(nextId);
+  }
+
+
+  private void requireCustomerExists(String id) {
+    if (!customers.containsKey(id)) {
+      throw new NotFoundException("Customer with id " + id + " does not exist");
+    }
   }
 
 }

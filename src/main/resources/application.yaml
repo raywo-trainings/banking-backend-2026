@@ -6,3 +6,11 @@ spring:
     deserialization:
       fail-on-ignored-properties: true
       fail-on-unknown-properties: true
+
+logging:
+  level:
+    root: INFO
+    org.springframework: INFO
+    org.springframework.web: DEBUG
+    de.raywo.banking: DEBUG
+

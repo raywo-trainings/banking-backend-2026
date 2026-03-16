@@ -1,5 +1,7 @@
 package de.raywo.banking.bankingbackend.boundary.accounts;
 
+import de.raywo.banking.bankingbackend.boundary.shared.NotFoundException;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -34,14 +36,10 @@ public class CurrentAccountsController {
 
   @PostMapping
   public ResponseEntity<CurrentAccountDTO> createAccount(
-      @RequestBody CurrentAccountDTO account,
+      @RequestBody @Valid CurrentAccountDTO account,
       UriComponentsBuilder uriBuilder
   ) {
     if (currentAccounts.containsKey(account.getIban())) {
-      return ResponseEntity.badRequest().build();
-    }
-
-    if (!account.getAccountType().equals("current")) {
       return ResponseEntity.badRequest().build();
     }
 
@@ -64,9 +62,7 @@ public class CurrentAccountsController {
   public ResponseEntity<CurrentAccountDTO> getCurrentAccount(
       @PathVariable String iban
   ) {
-    if (!currentAccounts.containsKey(iban)) {
-      return ResponseEntity.notFound().build();
-    }
+    requireAccountExists(iban);
 
     return ResponseEntity.ok(currentAccounts.get(iban));
   }
@@ -75,11 +71,9 @@ public class CurrentAccountsController {
   @PutMapping("/{iban}")
   public ResponseEntity<CurrentAccountDTO> updateAccount(
       @PathVariable String iban,
-      @RequestBody CurrentAccountDTO account
+      @RequestBody @Valid CurrentAccountDTO account
   ) {
-    if (!currentAccounts.containsKey(iban)) {
-      return ResponseEntity.notFound().build();
-    }
+    requireAccountExists(iban);
 
     var copiedAccount = CurrentAccountDTO.copyFrom(account);
 
@@ -93,12 +87,18 @@ public class CurrentAccountsController {
   public ResponseEntity<Void> deleteAccount(
       @PathVariable String iban
   ) {
-    if (!currentAccounts.containsKey(iban)) {
-      return ResponseEntity.notFound().build();
-    }
+    requireAccountExists(iban);
 
     currentAccounts.remove(iban);
 
     return ResponseEntity.noContent().build();
   }
+
+
+  private void requireAccountExists(String iban) {
+    if (!currentAccounts.containsKey(iban)) {
+      throw new NotFoundException("Account with IBAN " + iban + " does not exist");
+    }
+  }
+
 }

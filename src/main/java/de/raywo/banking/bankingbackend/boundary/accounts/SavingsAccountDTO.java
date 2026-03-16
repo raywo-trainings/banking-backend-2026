@@ -1,5 +1,7 @@
 package de.raywo.banking.bankingbackend.boundary.accounts;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -7,6 +9,8 @@ import lombok.EqualsAndHashCode;
 @Data
 public class SavingsAccountDTO extends AccountDTO {
 
+  @Min(0)
+  @Max(100)
   private Float interestRate;
 
 
