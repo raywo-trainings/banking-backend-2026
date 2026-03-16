@@ -1,5 +1,6 @@
 package de.raywo.banking.bankingbackend.boundary.shared;
 
+import jakarta.validation.ConstraintViolationException;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.http.*;
@@ -10,6 +11,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.springframework.http.HttpStatus.UNPROCESSABLE_CONTENT;
 
 @ControllerAdvice
 @ResponseBody
@@ -22,6 +28,27 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
   }
 
 
+  @ExceptionHandler(ConstraintViolationException.class)
+  @ResponseStatus(UNPROCESSABLE_CONTENT)
+  public ProblemDetail handleConstraintViolationException(ConstraintViolationException exception) {
+    var result = ProblemDetail.forStatus(UNPROCESSABLE_CONTENT);
+    result.setTitle("Unprocessable Content");
+    result.setDetail("Unable to process request due to constraint violations");
+    result.setProperty(
+        "violations",
+        exception.getConstraintViolations()
+            .stream()
+            .map(v -> ConstraintViolationDTO.builder()
+                .field(v.getPropertyPath().toString())
+                .message(v.getMessage())
+                .build()
+            )
+            .toList());
+
+    return result;
+  }
+
+
   @Override
   protected @Nullable ResponseEntity<Object> handleMethodArgumentNotValid(
       @NonNull MethodArgumentNotValidException ex,
@@ -29,14 +56,30 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
       @NonNull HttpStatusCode status,
       @NonNull WebRequest request
   ) {
-    ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_CONTENT);
-    problemDetail.setTitle("Validation failed");
-    problemDetail.setDetail("One or more validation errors occurred.");
+    ex.getBody().setStatus(UNPROCESSABLE_CONTENT);
+    ex.getBody().setProperty("violations", getViolations(ex));
 
-    return ResponseEntity
-        .status(HttpStatus.UNPROCESSABLE_CONTENT)
-        .headers(headers)
-        .body(problemDetail);
+    return super.handleMethodArgumentNotValid(
+        ex,
+        headers,
+        UNPROCESSABLE_CONTENT,
+        request
+    );
+  }
+
+
+  private static @NonNull List<Object> getViolations(@NonNull MethodArgumentNotValidException ex) {
+    return ex.getBindingResult()
+        .getFieldErrors()
+        .stream()
+        .map(
+            v -> ConstraintViolationDTO.builder()
+                .field(v.getField())
+                .constraint(v.getCode())
+                .message(v.getDefaultMessage())
+                .build()
+        )
+        .collect(Collectors.toList());
   }
 
 }
