@@ -1,5 +1,6 @@
 package de.raywo.banking.bankingbackend.boundary.shared;
 
+import de.raywo.banking.bankingbackend.control.shared.NotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -23,8 +24,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
   @ExceptionHandler(NotFoundException.class)
   @ResponseStatus(HttpStatus.NOT_FOUND)
-  public String handleNotFoundException(NotFoundException ex) {
-    return ex.getMessage();
+  public ProblemDetail handleNotFoundException(NotFoundException ex) {
+    ProblemDetail result = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+    result.setTitle("Not Found");
+    result.setDetail(ex.getMessage());
+
+    return result;
   }
 
 
