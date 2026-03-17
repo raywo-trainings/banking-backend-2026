@@ -1,13 +1,14 @@
 package de.raywo.banking.bankingbackend.control.customers;
 
-import de.raywo.banking.bankingbackend.control.shared.OnCreate;
-import de.raywo.banking.bankingbackend.control.shared.OnUpdate;
+import de.raywo.banking.bankingbackend.control.shared.OnRead;
+import de.raywo.banking.bankingbackend.control.shared.OnWrite;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 
 import java.util.UUID;
 
@@ -16,8 +17,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class Customer {
 
-  @Null(groups = OnCreate.class)
-  @NotNull(groups = OnUpdate.class)
+  @Null(groups = OnWrite.class)
+  @NotNull(groups = OnRead.class)
   private UUID id;
 
   @NotNull
@@ -27,5 +28,15 @@ public class Customer {
   @NotNull
   @Size(min = 2, max = 100)
   private final String city;
+
+
+  @NonNull
+  public static Customer copyFrom(@NonNull Customer customer) {
+    return new Customer(
+        customer.getId(),
+        customer.getName(),
+        customer.getCity()
+    );
+  }
 
 }
