@@ -1,6 +1,6 @@
 package de.raywo.banking.bankingbackend.boundary.accounts;
 
-import de.raywo.banking.bankingbackend.boundary.shared.NotFoundException;
+import de.raywo.banking.bankingbackend.control.shared.NotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

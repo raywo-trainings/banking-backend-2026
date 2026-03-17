@@ -1,42 +1,41 @@
 package de.raywo.banking.bankingbackend.boundary.customers;
 
-import de.raywo.banking.bankingbackend.boundary.shared.NotFoundException;
+import de.raywo.banking.bankingbackend.control.customers.Customer;
+import de.raywo.banking.bankingbackend.control.customers.CustomersService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/v1/customers")
+@RequiredArgsConstructor
 public class CustomersController {
 
-  private final Map<String, CustomerDTO> customers = new HashMap<>();
-
-
-  public CustomersController() {
-    String id1 = generateId();
-    customers.put(id1, new CustomerDTO(id1, "John Doe", "New York"));
-    String id2 = generateId();
-    customers.put(id2, new CustomerDTO(id2, "Jane Smith", "Los Angeles"));
-  }
+  private final CustomersService customersService;
+  private final CustomersMapper mapper;
 
 
   @GetMapping()
   public Collection<CustomerDTO> getCustomers() {
-    return customers.values();
+    return customersService.getCustomers()
+        .stream()
+        .map(item -> mapper.map(item))
+        .toList();
   }
 
 
   @GetMapping("/{id}")
-  public ResponseEntity<CustomerDTO> getCustomer(@PathVariable String id) {
-    requireCustomerExists(id);
+  public CustomerDTO getCustomer(@PathVariable String id) {
+    var uuid = UUID.fromString(id);
 
-    return ResponseEntity.ok(customers.get(id));
+    return mapper.map(customersService.getCustomer(uuid));
   }
 
 
@@ -45,13 +44,9 @@ public class CustomersController {
       @RequestBody @Valid CustomerDTO customer,
       UriComponentsBuilder uriBuilder
   ) {
-    final String id = generateId();
-    CustomerDTO newCustomer = new CustomerDTO(
-        id,
-        customer.getName(),
-        customer.getCity()
-    );
-    customers.put(id, newCustomer);
+    Customer newCustomer = customersService
+        .createCustomer(mapper.map(null, customer));
+    String id = newCustomer.getId().toString();
 
     URI location = uriBuilder
         .path("/{id}")
@@ -60,54 +55,28 @@ public class CustomersController {
 
     return ResponseEntity
         .created(location)
-        .body(newCustomer);
+        .body(mapper.map(newCustomer));
   }
 
 
   @PutMapping("/{id}")
-  public ResponseEntity<CustomerDTO> updateCustomer(
+  public CustomerDTO updateCustomer(
       @PathVariable String id,
       @RequestBody @Valid CustomerDTO customer
   ) {
-    requireCustomerExists(id);
-
-    CustomerDTO updatedCustomer = new CustomerDTO(
-        id,
-        customer.getName(),
-        customer.getCity()
+    Customer updatedCustomer = customersService.updateCustomer(
+        UUID.fromString(id),
+        mapper.map(id, customer)
     );
 
-    customers.put(id, updatedCustomer);
-
-    return ResponseEntity.ok(updatedCustomer);
+    return mapper.map(updatedCustomer);
   }
 
 
   @DeleteMapping("/{id}")
-  public ResponseEntity<Void> deleteCustomer(@PathVariable String id) {
-    requireCustomerExists(id);
-
-    customers.remove(id);
-
-    return ResponseEntity.noContent().build();
-  }
-
-
-  private String generateId() {
-    int nextId = customers.keySet()
-        .stream()
-        .mapToInt(Integer::parseInt)
-        .max()
-        .orElse(0) + 1;
-
-    return String.valueOf(nextId);
-  }
-
-
-  private void requireCustomerExists(String id) {
-    if (!customers.containsKey(id)) {
-      throw new NotFoundException("Customer with id " + id + " does not exist");
-    }
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void deleteCustomer(@PathVariable String id) {
+    customersService.deleteCustomer(UUID.fromString(id));
   }
 
 }
