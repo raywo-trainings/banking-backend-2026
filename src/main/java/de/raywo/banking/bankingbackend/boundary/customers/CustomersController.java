@@ -23,10 +23,13 @@ public class CustomersController {
 
 
   @GetMapping()
-  public Collection<CustomerDTO> getCustomers() {
-    return customersService.getCustomers()
+  public Collection<CustomerDTO> getCustomers(
+      @RequestParam(required = false) String name,
+      @RequestParam(required = false) String city
+  ) {
+    return customersService.getCustomers(name, city)
         .stream()
-        .map(item -> mapper.map(item))
+        .map(mapper::map)
         .toList();
   }
 
