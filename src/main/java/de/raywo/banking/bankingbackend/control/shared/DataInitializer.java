@@ -18,11 +18,17 @@ public class DataInitializer {
 
   @EventListener(ApplicationReadyEvent.class)
   public void initialize() {
+    if (customersService.getCustomerCount() > 0) {
+      return;
+    }
+
+    log.info("Initializing customers...");
     Customer customer1 = new Customer("Max Musterfrau", "Hamburg");
     Customer customer2 = new Customer("Peter Mustermann", "Berlin");
 
     customersService.createCustomer(customer1);
     customersService.createCustomer(customer2);
+    log.info("Customers initialized");
   }
 
 }
