@@ -1,7 +1,7 @@
 package de.raywo.banking.bankingbackend.boundary.shared;
 
-import de.raywo.banking.bankingbackend.control.accounts.UnknownCustomerException;
 import de.raywo.banking.bankingbackend.control.shared.NotFoundException;
+import de.raywo.banking.bankingbackend.control.shared.UnknownCustomerException;
 import jakarta.validation.ConstraintViolationException;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -32,6 +32,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     return result;
   }
+
 
   @ExceptionHandler(UnknownCustomerException.class)
   @ResponseStatus(UNPROCESSABLE_CONTENT)
