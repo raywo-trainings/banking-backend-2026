@@ -19,7 +19,7 @@ import java.util.UUID;
 public class CustomersController {
 
   private final CustomersService customersService;
-  private final CustomersMapper mapper;
+  private final CustomersDTOMapper mapper;
 
 
   @GetMapping()
