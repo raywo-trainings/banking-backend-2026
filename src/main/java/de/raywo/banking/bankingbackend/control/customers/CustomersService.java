@@ -2,6 +2,7 @@ package de.raywo.banking.bankingbackend.control.customers;
 
 
 import de.raywo.banking.bankingbackend.control.shared.NotFoundException;
+import de.raywo.banking.bankingbackend.control.shared.OnWrite;
 import de.raywo.banking.bankingbackend.entity.customers.CustomersRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,28 +36,17 @@ public class CustomersService {
   }
 
 
+  @Validated(OnWrite.class)
   public Customer createCustomer(@Valid Customer customer) {
-    UUID newId = UUID.randomUUID();
-    Customer newCustomer = new Customer(
-        newId,
-        customer.getName(),
-        customer.getCity()
-    );
-
-    return mapper.map(repo.save(mapper.map(newCustomer)));
+    return mapper.map(repo.save(mapper.map(null, customer)));
   }
 
 
+  @Validated(OnWrite.class)
   public Customer updateCustomer(UUID id, @Valid Customer customer) {
     requireCustomerExists(id);
 
-    Customer updatedCustomer = new Customer(
-        id,
-        customer.getName(),
-        customer.getCity()
-    );
-
-    return mapper.map(repo.save(mapper.map(updatedCustomer)));
+    return mapper.map(repo.save(mapper.map(id, customer)));
   }
 
 
