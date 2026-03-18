@@ -2,31 +2,36 @@ package de.raywo.banking.bankingbackend.control.customers;
 
 
 import de.raywo.banking.bankingbackend.control.shared.NotFoundException;
+import de.raywo.banking.bankingbackend.entity.customers.CustomersRepository;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 @Service
 @Validated
+@RequiredArgsConstructor
 public class CustomersService {
 
-  private final Map<UUID, Customer> customers = new HashMap<>();
+  private final CustomersRepository repo;
+  private final CustomersMapper mapper;
 
 
   public Collection<Customer> getCustomers() {
-    return customers.values();
+    return repo.findAll()
+        .stream()
+        .map(mapper::map)
+        .toList();
   }
 
 
   public Customer getCustomer(UUID id) {
-    requireCustomerExists(id);
-
-    return customers.get(id);
+    return repo.findById(id)
+        .map(mapper::map)
+        .orElseThrow(() -> new NotFoundException("Customer with id " + id + " does not exist"));
   }
 
 
@@ -38,9 +43,7 @@ public class CustomersService {
         customer.getCity()
     );
 
-    customers.put(newId, newCustomer);
-
-    return newCustomer;
+    return mapper.map(repo.save(mapper.map(newCustomer)));
   }
 
 
@@ -52,20 +55,24 @@ public class CustomersService {
         customer.getName(),
         customer.getCity()
     );
-    customers.put(id, updatedCustomer);
 
-    return updatedCustomer;
+    return mapper.map(repo.save(mapper.map(updatedCustomer)));
   }
 
 
   public void deleteCustomer(UUID id) {
     requireCustomerExists(id);
-    customers.remove(id);
+    repo.deleteById(id);
+  }
+
+
+  public long getCustomerCount() {
+    return repo.count();
   }
 
 
   private void requireCustomerExists(UUID id) {
-    if (!customers.containsKey(id)) {
+    if (!repo.existsById(id)) {
       throw new NotFoundException("Customer with id " + id + " does not exist");
     }
   }
