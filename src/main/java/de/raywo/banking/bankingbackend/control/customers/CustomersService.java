@@ -25,9 +25,7 @@ public class CustomersService {
 
 
   public Collection<Customer> getCustomers(String name, String city) {
-    Specification<CustomerEntity> spec = Specification.where(
-        (Specification<CustomerEntity>) null
-    );
+    Specification<CustomerEntity> spec = (root, query, cb) -> null;
 
     if (name != null) {
       spec = spec.and(CustomerSpecs.nameContains(name));

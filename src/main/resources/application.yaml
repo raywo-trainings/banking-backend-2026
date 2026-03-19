@@ -26,6 +26,6 @@ logging:
   level:
     root: INFO
     org.springframework: INFO
-    org.springframework.web: DEBUG
+    org.springframework.web: INFO
     de.raywo.banking: DEBUG
 

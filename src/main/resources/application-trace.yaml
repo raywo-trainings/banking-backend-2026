@@ -1,0 +1,6 @@
+logging:
+  level:
+    root: TRACE
+    org.springframework: TRACE
+    org.springframework.web: TRACE
+    de.raywo.banking: TRACE

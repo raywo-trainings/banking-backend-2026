@@ -18,7 +18,9 @@ public class DataInitializer {
 
   @EventListener(ApplicationReadyEvent.class)
   public void initialize() {
+    log.debug("Checking for existing customers...");
     if (customersService.getCustomerCount() > 0) {
+      log.debug("Customers already exist, skipping initialization");
       return;
     }
 
