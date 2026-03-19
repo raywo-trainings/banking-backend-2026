@@ -3,14 +3,16 @@ package de.raywo.banking.bankingbackend.control.customers;
 
 import de.raywo.banking.bankingbackend.control.shared.NotFoundException;
 import de.raywo.banking.bankingbackend.control.shared.OnWrite;
+import de.raywo.banking.bankingbackend.entity.customers.CustomerEntity;
+import de.raywo.banking.bankingbackend.entity.customers.CustomerSpecs;
 import de.raywo.banking.bankingbackend.entity.customers.CustomersRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
 import java.util.Collection;
-import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -22,28 +24,23 @@ public class CustomersService {
   private final CustomersMapper mapper;
 
 
-  @FunctionalInterface
-  private interface CustomerFilterStrategy {
-    Collection<Customer> apply(String namePrefix, String city);
-  }
+  public Collection<Customer> getCustomers(String name, String city) {
+    Specification<CustomerEntity> spec = Specification.where(
+        (Specification<CustomerEntity>) null
+    );
 
-  private record FilterKey(boolean hasName, boolean hasCity) {
-    static FilterKey from(String name, String city) {
-      return new FilterKey(name != null, city != null);
+    if (name != null) {
+      spec = spec.and(CustomerSpecs.nameContains(name));
     }
-  }
 
-  private final Map<FilterKey, CustomerFilterStrategy> filterStrategies = Map.of(
-      new FilterKey(true, true), this::getCustomersByNameAndCity,
-      new FilterKey(true, false), this::getCustomersByName,
-      new FilterKey(false, true), this::getCustomersByCity,
-      new FilterKey(false, false), this::getAllCustomers
-  );
+    if (city != null) {
+      spec = spec.and(CustomerSpecs.cityContains(city));
+    }
 
-
-  public Collection<Customer> getCustomers(String namePrefix, String city) {
-    var strategy = filterStrategies.get(FilterKey.from(namePrefix, city));
-    return strategy.apply(namePrefix, city);
+    return repo.findAll(spec)
+        .stream()
+        .map(mapper::map)
+        .toList();
   }
 
 
@@ -78,37 +75,6 @@ public class CustomersService {
     return repo.count();
   }
 
-
-  private Collection<Customer> getAllCustomers(String ignoredName, String ignoredCity) {
-    return repo.findAll()
-        .stream()
-        .map(mapper::map)
-        .toList();
-  }
-
-
-  private Collection<Customer> getCustomersByName(String name, String ignoredCity) {
-    return repo.findByNameContainingIgnoreCase(name)
-        .stream()
-        .map(mapper::map)
-        .toList();
-  }
-
-
-  private Collection<Customer> getCustomersByCity(String ignoredName, String city) {
-    return repo.findByCityContainingIgnoreCase(city)
-        .stream()
-        .map(mapper::map)
-        .toList();
-  }
-
-
-  private Collection<Customer> getCustomersByNameAndCity(String name, String city) {
-    return repo.findByNameContainingIgnoreCaseAndCityContainingIgnoreCase(name, city)
-        .stream()
-        .map(mapper::map)
-        .toList();
-  }
 
 
   private void requireCustomerExists(UUID id) {
